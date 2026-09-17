@@ -12,7 +12,7 @@
 
 **Load Balancer**: Traffic Distribution for API service cluster
 
-**API Service + Redis Cluster**: Handles Rate Limiting, Authentication, Sale Window, Stock Dedup
+**API Service + Redis Cluster**: Handles Rate Limiting, Authentication, Sales Status, Purchasing, and Admin Controls.
 
 **Message Queue**: Publishes successful order events
 
