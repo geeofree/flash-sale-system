@@ -2,7 +2,7 @@
 
 ## System Diagram
 
-![Flash Sale System Diagram](/figures/flash-sale-system-diagram.png)
+![Flash Sale System Diagram](/figures/flash-sale-system-design-diagram.png)
 
 ### Components
 
