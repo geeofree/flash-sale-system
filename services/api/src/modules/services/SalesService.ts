@@ -1,7 +1,7 @@
-import { DIContainer } from "../utils/DependencyInjection.js";
-import { DbService, type Database } from "./DbService.js";
+import { TOKENS } from "../utils/DependencyInjection.js";
+import { type Database } from "./DbService.js";
 import { jsonResponse, type JsonResponseMsg } from "../utils/Response.js";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
 import { StatusCodes } from "http-status-codes";
 import { SalesTable } from "../../db/schema.js";
 import { getTableColumns } from "drizzle-orm";
@@ -13,7 +13,8 @@ export type FlashSaleParams = {
 
 @injectable()
 export class SalesService {
-  private db = DIContainer.get(DbService) as Database;
+  @inject(TOKENS.DB)
+  private db!: Database;
 
   async getSaleStatus(): Promise<JsonResponseMsg> {
     try {
@@ -57,7 +58,7 @@ export class SalesService {
       console.log(error);
       return jsonResponse<null>({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: "Something went wrong while fetching sale status.",
+        message: "Something went wrong while creating sale status.",
         data: null,
       })
     }

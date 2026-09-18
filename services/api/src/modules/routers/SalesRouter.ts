@@ -10,7 +10,7 @@ SalesRouter.get('/status', async (_req, res) => {
   res.json(saleStatus.result).status(saleStatus.statusCode);
 });
 
-SalesRouter.post('/status', async (req, res) => {
+SalesRouter.post('/', async (req, res) => {
   const params = req.body;
   const salesService = DIContainer.get(SalesService);
   const response = await salesService.createFlashSale(params);
