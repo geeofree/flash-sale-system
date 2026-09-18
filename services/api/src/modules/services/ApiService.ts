@@ -1,5 +1,5 @@
 import { injectable } from "inversify";
-import { default as express } from 'express';
+import { default as express, json } from 'express';
 import type { Express } from 'express';
 import { SalesRouter } from "../routers/SalesRouter.js";
 import { ProductsRouter } from "../routers/ProductsRouter.js";
@@ -22,6 +22,7 @@ export class ApiService {
   }
 
   private registerRoutes() {
+    this.app.use(json());
     this.app.use('/api/sales', SalesRouter);
     this.app.use('/api/products', ProductsRouter);
     this.app.use('/api/auth', AuthRouter);
