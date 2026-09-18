@@ -1,11 +1,8 @@
-import express from 'express';
-import { Routes } from './routes/index.js';
+import { App } from './modules/App.js'
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+function main() {
+  const app = new App();
+  app.start();
+}
 
-Routes(app);
-
-app.listen(PORT, () => {
-  console.log(`Application started in localhost:${PORT}`);
-});
+main();

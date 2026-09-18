@@ -28,11 +28,45 @@ services:
       context: ./services/api
     deploy:
       replicas: 3
+    depends_on:
+      - redis-cluster
+      - postgres-db
     environment:
       - PORT=5300
+      - POSTGRES_DB_URL=postgresql://admin:secretpassword@postgres-db:5432/postgres
+      - REDIS_HOST=redis-cluster
+    networks:
+      - flash-sale-net
+
+  redis-cluster:
+    image: redis:7-alpine
+    container_name: flash-sale-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - flash-sale-net
+
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: flash-sale-db
+    environment:
+      POSTGRES_DB: flash_sale_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
     networks:
       - flash-sale-net
 
 networks:
   flash-sale-net:
     driver: bridge
+
+volumes:
+  db-data:
+  redis-data:
