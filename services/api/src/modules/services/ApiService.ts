@@ -7,30 +7,32 @@ import { AuthRouter } from "../routers/AuthRouter.js";
 import session from "express-session";
 import { RedisStore } from "connect-redis";
 import { DIContainer, TOKENS } from "../utils/DependencyInjection.js";
-import type { Redis } from "ioredis";
+import type { RedisClientType } from "redis";
 
 @injectable()
 export class ApiService {
   private app: Express;
 
-  private redisClient = DIContainer.get(TOKENS.REDIS) as Redis
+  private redisClient = DIContainer.getAsync<RedisClientType>(TOKENS.REDIS)
 
   constructor() {
     this.app = express();
-    this.registerRoutes();
   }
 
-  start() {
+  async start() {
+    await this.registerRoutes();
     const PORT = process.env['PORT'] || 3000;
     this.app.listen(PORT, () => {
       console.log(`API service running in localhost:${PORT}`);
     })
   }
 
-  private registerRoutes() {
+  private async registerRoutes() {
+    const redisClient = await this.redisClient;
+    this.app.set('trust proxy', 1);
     this.app.use(
       session({
-        store: new RedisStore({ client: this.redisClient, prefix: 'sess:' }),
+        store: new RedisStore({ client: redisClient, prefix: 'sess:' }),
         secret: process.env['SESSION_SECRET']!,
         resave: false,
         saveUninitialized: false,

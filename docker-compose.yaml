@@ -35,7 +35,7 @@ services:
     environment:
       - PORT=5300
       - POSTGRES_DB_URL=postgresql://admin:secretpassword@postgres-db:5432/postgres
-      - REDIS_HOST=redis-cluster
+      - REDIS_URL=redis://:@redis-cluster:6379
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
       - SESSION_SECRET='The quick brown fox jumps over the lazy dog'
     networks:

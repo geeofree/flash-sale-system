@@ -1,8 +1,8 @@
 import { App } from './modules/App.js'
 
-function main() {
+async function main() {
   const app = new App();
-  app.start();
+  await app.start();
 }
 
 main();

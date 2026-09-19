@@ -12,14 +12,14 @@ export class App {
     this.bootstrap();
   }
 
-  start() {
+  async start() {
     const apiServer = DIContainer.get(ApiService);
-    apiServer.start();
+    await apiServer.start();
   }
 
   private bootstrap() {
     DIContainer.bind(TOKENS.DB).toConstantValue(DbService.resolveValue());
-    DIContainer.bind(TOKENS.REDIS).toConstantValue(RedisService.resolveValue());
+    DIContainer.bind(TOKENS.REDIS).toResolvedValue(RedisService.resolveValue);
     DIContainer.bind(TOKENS.MQ).toResolvedValue(MqService.resolveValue);
 
     DIContainer.bind(ApiService).toSelf().inSingletonScope();

@@ -1,10 +1,9 @@
-import { Redis } from "ioredis";
+import { createClient } from "redis";
 
 export class RedisService {
-  static resolveValue() {
-    const host = process.env['REDIS_HOST'] || '127.0.0.1'
-    const port = process.env['REDIS_PORT'] ? Number(process.env['REDIS_PORT']) : 6379
-    const redisClient = new Redis({ host, port });
+  static async resolveValue() {
+    const redisClient = createClient({ url: process.env['REDIS_URL']! });
+    await redisClient.connect();
     return redisClient;
   }
 }

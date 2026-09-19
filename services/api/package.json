@@ -22,8 +22,8 @@
     "express-session": "^1.19.0",
     "http-status-codes": "^2.3.0",
     "inversify": "^8.2.3",
-    "ioredis": "^6.0.0",
     "pg": "^8.23.0",
+    "redis": "^6.2.1",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
