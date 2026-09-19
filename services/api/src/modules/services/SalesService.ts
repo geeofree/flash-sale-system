@@ -1,10 +1,12 @@
-import { TOKENS } from "../utils/DependencyInjection.js";
+import { DIContainer, TOKENS } from "../utils/DependencyInjection.js";
 import { type Database } from "./DbService.js";
 import { jsonResponse, type JsonResponseMsg } from "../utils/Response.js";
 import { inject, injectable } from "inversify";
 import { StatusCodes } from "http-status-codes";
-import { SalesTable } from "../../db/schema.js";
-import { getTableColumns, sql } from "drizzle-orm";
+import { ProductsTable, SalesTable } from "../../db/schema.js";
+import { sql } from "drizzle-orm";
+import type { RedisClientType } from "redis";
+import { ProductsService } from "./ProductsService.js";
 
 export type FlashSaleParams = {
   startTime: Date;
@@ -16,10 +18,20 @@ export class SalesService {
   @inject(TOKENS.DB)
   private db!: Database;
 
+  @inject(ProductsService)
+  private productService!: ProductsService;
+
+  private redis = DIContainer.getAsync<RedisClientType>(TOKENS.REDIS);
+
+  static USERS_KEY = 'SALE_USERS';
+
+  static STOCK_KEY = 'SALE_STOCK';
+
+  static WINDOW_KEY = 'SALE_WINDOW';
+
   async getAllSales(): Promise<JsonResponseMsg> {
     try {
-      const { id, ...returnedColumns } = getTableColumns(SalesTable);
-      const sales = await this.db.select(returnedColumns)
+      const sales = await this.db.select()
         .from(SalesTable) 
         .orderBy(sql`
           -- Tier 0: Active Sale right now
@@ -62,8 +74,7 @@ export class SalesService {
 
   async getLatestSale(): Promise<JsonResponseMsg> {
     try {
-      const { id, ...returnedColumns } = getTableColumns(SalesTable);
-      const [sale] = await this.db.select(returnedColumns)
+      const [sale] = await this.db.select()
         .from(SalesTable) 
         .orderBy(sql`
           -- Tier 0: Active Sale right now
@@ -127,18 +138,60 @@ export class SalesService {
         data: null, 
         message: "Start time must not be greater than or equal to end time.",
       });
-      const { id, ...returnedColumns } = getTableColumns(SalesTable);
 
       const [sale] = await this.db.insert(SalesTable).values({
         startTime: new Date(params.startTime),
         endTime: new Date(params.endTime)
-      }).returning(returnedColumns);
+      }).returning();
 
       return jsonResponse({
         statusCode: StatusCodes.CREATED,
         data: sale,
         message: "Successfully created new sale!",
       });
+    } catch (error: unknown) {
+      console.log(error);
+      return jsonResponse<null>({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: "Something went wrong while creating new sale.",
+        data: null,
+      })
+    }
+  }
+
+  async preloadSale(productSku: number): Promise<JsonResponseMsg> {
+    try {
+      const latestSaleRes = await this.getLatestSale();
+
+      if (latestSaleRes.statusCode !== StatusCodes.OK) {
+        return latestSaleRes;
+      }
+
+      const productRes = await this.productService.getProductBySku(productSku);
+
+      if (productRes.statusCode !== StatusCodes.OK) {
+        return productRes;
+      }
+
+      const latestSale = latestSaleRes.result.data as typeof SalesTable.$inferSelect;
+      const product = productRes.result.data as typeof ProductsTable.$inferSelect;
+
+      const redisClient = await this.redis;
+
+      await redisClient.set(SalesService.STOCK_KEY, product.stock);
+
+      await redisClient.hSet(SalesService.WINDOW_KEY, {
+        startTime: latestSale.startTime.getTime(),
+        endTime: latestSale.endTime.getTime(),
+      });
+
+      await redisClient.del(SalesService.USERS_KEY);
+
+      return jsonResponse<null>({
+        statusCode: StatusCodes.OK,
+        message: "Successfully pre-loaded sale caches!",
+        data: null,
+      })
     } catch (error: unknown) {
       console.log(error);
       return jsonResponse<null>({
