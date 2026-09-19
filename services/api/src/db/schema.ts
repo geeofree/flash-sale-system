@@ -14,6 +14,6 @@ export const SalesTable = pgTable('sales', {
 
 export const ProductsTable = pgTable('products', {
   id: integer().primaryKey().notNull().unique().generatedAlwaysAsIdentity(),
-  username: varchar({ length: 255 }).unique().notNull(),
-  stock: integer()
+  name: varchar({ length: 255 }).unique().notNull(),
+  stock: integer().notNull().default(0)
 });
