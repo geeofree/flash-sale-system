@@ -50,6 +50,20 @@
       "when": 1789784989682,
       "tag": "0006_amazing_network",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789808311200,
+      "tag": "0007_melted_siren",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789810220626,
+      "tag": "0008_mixed_swarm",
+      "breakpoints": true
     }
   ]
 }

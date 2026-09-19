@@ -1,4 +1,5 @@
 import { ApiService } from "./services/ApiService.js";
+import { AuthService } from "./services/AuthService.js";
 import { DbService } from "./services/DbService.js";
 import { MqService } from "./services/MqService.js";
 import { ProductsService } from "./services/ProductsService.js";
@@ -24,5 +25,6 @@ export class App {
     DIContainer.bind(ApiService).toSelf().inSingletonScope();
     DIContainer.bind(SalesService).toSelf().inSingletonScope();
     DIContainer.bind(ProductsService).toSelf().inSingletonScope();
+    DIContainer.bind(AuthService).toSelf().inSingletonScope();
   }
 }

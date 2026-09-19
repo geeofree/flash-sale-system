@@ -14,9 +14,10 @@
   "license": "ISC",
   "dependencies": {
     "amqplib": "^2.0.1",
+    "argon2": "^0.45.1",
     "connect-redis": "^10.0.0",
-    "drizzle-orm": "^0.45.2",
     "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "http-status-codes": "^2.3.0",
