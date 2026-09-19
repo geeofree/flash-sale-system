@@ -40,6 +40,19 @@ services:
     networks:
       - flash-sale-net
 
+  order-worker:
+    build:
+      context: ./services/order_worker
+    deploy:
+      replicas: 3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    networks:
+      - flash-sale-net
+
   redis-cluster:
     image: redis:7-alpine
     container_name: flash-sale-redis
