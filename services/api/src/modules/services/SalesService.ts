@@ -4,7 +4,7 @@ import { jsonResponse, type JsonResponseMsg } from "../utils/Response.js";
 import { inject, injectable } from "inversify";
 import { StatusCodes } from "http-status-codes";
 import { SalesTable } from "../../db/schema.js";
-import { asc, getTableColumns } from "drizzle-orm";
+import { getTableColumns, sql } from "drizzle-orm";
 
 export type FlashSaleParams = {
   startTime: Date;
@@ -21,7 +21,7 @@ export class SalesService {
       const { id, ...returnedColumns } = getTableColumns(SalesTable);
       const sales = await this.db.select(returnedColumns)
         .from(SalesTable) 
-        .orderBy(asc(SalesTable.startTime))
+        .orderBy(sql`(${SalesTable.startTime} >= NOW()) DESC, ${SalesTable.startTime} ASC`)
       return jsonResponse({
         statusCode: StatusCodes.OK,
         data: sales,
@@ -41,9 +41,18 @@ export class SalesService {
       const { id, ...returnedColumns } = getTableColumns(SalesTable);
       const [sale] = await this.db.select(returnedColumns)
         .from(SalesTable) 
-        .orderBy(asc(SalesTable.startTime))
+        .orderBy(sql`(${SalesTable.startTime} >= NOW()) DESC, ${SalesTable.startTime} ASC`)
         .limit(1);
-      return jsonResponse({
+
+      if (sale == null) {
+        return jsonResponse<null>({
+          statusCode: StatusCodes.NOT_FOUND,
+          data: null,
+          message: "No latest sale exists yet.",
+        });
+      }
+
+      return jsonResponse<Omit<typeof SalesTable.$inferSelect, "id">>({
         statusCode: StatusCodes.OK,
         data: sale,
         message: "Successfully retrieve latest sale!",
@@ -65,6 +74,11 @@ export class SalesService {
         message: "Start time or end time not provided.",
       });
 
+      if (params.startTime >= params.endTime) return jsonResponse({
+        statusCode: StatusCodes.BAD_REQUEST,
+        data: null, 
+        message: "Start time must not be greater than or equal to end time.",
+      });
       const { id, ...returnedColumns } = getTableColumns(SalesTable);
 
       const [sale] = await this.db.insert(SalesTable).values({

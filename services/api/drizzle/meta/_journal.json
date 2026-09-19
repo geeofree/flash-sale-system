@@ -43,6 +43,13 @@
       "when": 1789779157248,
       "tag": "0005_brave_wild_child",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789784989682,
+      "tag": "0006_amazing_network",
+      "breakpoints": true
     }
   ]
 }

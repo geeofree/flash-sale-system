@@ -8,8 +8,8 @@ export const UsersTable = pgTable('users', {
 
 export const SalesTable = pgTable('sales', {
   id: integer().primaryKey().notNull().unique().generatedAlwaysAsIdentity(),
-  startTime: timestamp().notNull(),
-  endTime: timestamp().notNull(),
+  startTime: timestamp({ withTimezone: true }).notNull(),
+  endTime: timestamp({ withTimezone: true }).notNull(),
 });
 
 export const ProductsTable = pgTable('products', {

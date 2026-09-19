@@ -1,15 +1,16 @@
-import type { ChannelModel } from "amqplib";
-import { DIContainer, TOKENS } from "../utils/DependencyInjection.js";
+import { TOKENS } from "../utils/DependencyInjection.js";
 import { inject, injectable } from "inversify";
 import { jsonResponse } from "../utils/Response.js";
 import { StatusCodes } from "http-status-codes";
-import { ProductsTable } from "../../db/schema.js";
+import { ProductsTable, SalesTable } from "../../db/schema.js";
 import type { Database } from "./DbService.js";
 import { eq, getTableColumns } from "drizzle-orm";
+import { SalesService } from "./SalesService.js";
 
 @injectable()
 export class ProductsService {
-  private mqConnection = DIContainer.getAsync<ChannelModel>(TOKENS.MQ);
+  @inject(SalesService)
+  private salesService!: SalesService;
 
   @inject(TOKENS.DB)
   private db!: Database;
@@ -86,20 +87,45 @@ export class ProductsService {
   }
 
   async createOrder() {
-    const queueKey = 'orders';
-    const connection = await this.mqConnection;
-    const channel = await connection.createChannel();
-    await channel.assertQueue(queueKey, { durable: true });
+    try {
+      const latestSaleResponse = await this.salesService.getLatestSale();
 
-    const message = JSON.stringify({ hello: "world" });
-    channel.sendToQueue(queueKey, Buffer.from(message));
+      if (latestSaleResponse.statusCode !== StatusCodes.OK) {
+        return latestSaleResponse;
+      }
 
-    await channel.close();
+      const latestSale = latestSaleResponse.result.data as Omit<typeof SalesTable.$inferSelect , "id"> ;
 
-    return jsonResponse({
-      statusCode: StatusCodes.CREATED,
-      message: "Successfully reserved order!",
-      data: { some: "ticket_value" }
-    });
+      const now = new Date().getTime();
+      const saleStartTime = new Date(latestSale.startTime).getTime();
+      const saleEndTime = new Date(latestSale.endTime).getTime();
+
+      if (now < saleStartTime) {
+        return jsonResponse<null>({
+          statusCode: StatusCodes.BAD_REQUEST,
+          message: "Sale has not started yet.",
+          data: null,
+        });
+      } else if (now > saleEndTime) {
+        return jsonResponse<null>({
+          statusCode: StatusCodes.BAD_REQUEST,
+          message: "Sale has ended.",
+          data: null,
+        });
+      }
+
+      return jsonResponse<null>({
+        statusCode: StatusCodes.OK,
+        message: "Product successfully reserved!",
+        data: null,
+      });
+    } catch (error) {
+      console.error(error);
+      return jsonResponse<null>({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: "Something went wrong while ordering the product.",
+        data: null,
+      })
+    }
   }
 }
