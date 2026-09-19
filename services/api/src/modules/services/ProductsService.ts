@@ -2,15 +2,12 @@ import { TOKENS } from "../utils/DependencyInjection.js";
 import { inject, injectable } from "inversify";
 import { jsonResponse } from "../utils/Response.js";
 import { StatusCodes } from "http-status-codes";
-import { ProductsTable, SalesTable } from "../../db/schema.js";
+import { ProductsTable } from "../../db/schema.js";
 import type { Database } from "./DbService.js";
 import { eq, getTableColumns } from "drizzle-orm";
-import { SalesService } from "./SalesService.js";
 
 @injectable()
 export class ProductsService {
-  @inject(SalesService)
-  private salesService!: SalesService;
 
   @inject(TOKENS.DB)
   private db!: Database;
@@ -88,32 +85,6 @@ export class ProductsService {
 
   async createOrder() {
     try {
-      const latestSaleResponse = await this.salesService.getLatestSale();
-
-      if (latestSaleResponse.statusCode !== StatusCodes.OK) {
-        return latestSaleResponse;
-      }
-
-      const latestSale = latestSaleResponse.result.data as Omit<typeof SalesTable.$inferSelect , "id"> ;
-
-      const now = new Date().getTime();
-      const saleStartTime = new Date(latestSale.startTime).getTime();
-      const saleEndTime = new Date(latestSale.endTime).getTime();
-
-      if (now < saleStartTime) {
-        return jsonResponse<null>({
-          statusCode: StatusCodes.BAD_REQUEST,
-          message: "Sale has not started yet.",
-          data: null,
-        });
-      } else if (now > saleEndTime) {
-        return jsonResponse<null>({
-          statusCode: StatusCodes.BAD_REQUEST,
-          message: "Sale has ended.",
-          data: null,
-        });
-      }
-
       return jsonResponse<null>({
         statusCode: StatusCodes.OK,
         message: "Product successfully reserved!",

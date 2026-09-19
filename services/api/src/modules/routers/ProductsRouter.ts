@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { DIContainer } from "../utils/DependencyInjection.js";
 import { ProductsService } from "../services/ProductsService.js";
+import { checkLatestSaleStatus } from "../middlewares/SalesMiddleware.js";
 
 export const ProductsRouter = Router();
 
@@ -24,7 +25,7 @@ ProductsRouter.get('/:sku', async (req, res) => {
   res.json(response.result).status(response.statusCode);
 });
 
-ProductsRouter.post('/:sku/purchase', async (_req, res) => {
+ProductsRouter.post('/:sku/purchase', checkLatestSaleStatus, async (_req, res) => {
   const productsService = DIContainer.get(ProductsService);
   const response = await productsService.createOrder();
   res.json(response.result).status(response.statusCode);
