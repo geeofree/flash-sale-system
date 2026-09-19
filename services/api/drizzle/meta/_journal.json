@@ -8,6 +8,27 @@
       "when": 1789737295120,
       "tag": "0000_quick_warbound",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789779015255,
+      "tag": "0001_productive_overlord",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789779024894,
+      "tag": "0002_massive_wrecking_crew",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789779034967,
+      "tag": "0003_mute_chameleon",
+      "breakpoints": true
     }
   ]
 }
