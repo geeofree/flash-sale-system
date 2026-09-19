@@ -26,14 +26,14 @@ export const checkLatestSaleStatus: RequestHandler = async (_req, res, next) => 
         message: "Sale has not started yet.",
         data: null,
       });
-      return res.json(response.result).status(response.statusCode);
+      return res.status(response.statusCode).json(response.result);
     } else if (now > saleEndTime) {
       const response = jsonResponse<null>({
         statusCode: StatusCodes.BAD_REQUEST,
         message: "Sale has ended.",
         data: null,
       });
-      return res.json(response.result).status(response.statusCode);
+      return res.status(response.statusCode).json(response.result);
     }
 
     return next();
@@ -44,6 +44,6 @@ export const checkLatestSaleStatus: RequestHandler = async (_req, res, next) => 
       message: "Something went wrong while ordering the product.",
       data: null,
     })
-    return res.json(response.result).status(response.statusCode);
+    return res.status(response.statusCode).json(response.result);
   }
 }

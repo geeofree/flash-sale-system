@@ -10,7 +10,7 @@ export function auth(roles?: string[]) {
         message: "You are unauthenticated. Please sign-in.",
         data: null,
       });
-      return res.json(response.result).status(response.statusCode);
+      return res.status(response.statusCode).json(response.result);
     }
 
     if (roles == null) {
@@ -23,7 +23,7 @@ export function auth(roles?: string[]) {
         message: "You do not have the right authorization to access this service.",
         data: null,
       });
-      return res.json(response.result).status(response.statusCode);
+      return res.status(response.statusCode).json(response.result);
     }
 
     return next();
