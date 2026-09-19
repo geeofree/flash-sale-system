@@ -100,7 +100,7 @@ export class AuthService {
       console.log(error);
       return jsonResponse<null>({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: "Something went wrong while signing in.",
+        message: "Something went wrong while signing up.",
         data: null,
       })
     }
