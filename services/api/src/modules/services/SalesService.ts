@@ -21,7 +21,31 @@ export class SalesService {
       const { id, ...returnedColumns } = getTableColumns(SalesTable);
       const sales = await this.db.select(returnedColumns)
         .from(SalesTable) 
-        .orderBy(sql`(${SalesTable.startTime} >= NOW()) DESC, ${SalesTable.startTime} ASC`)
+        .orderBy(sql`
+          -- Tier 0: Active Sale right now
+          -- Tier 1: Next upcoming sales
+          -- Tier 2: Past sales
+          CASE 
+            WHEN NOW() BETWEEN ${SalesTable.startTime} AND ${SalesTable.endTime} THEN 0
+            WHEN ${SalesTable.startTime} > NOW() THEN 1
+            ELSE 2
+          END ASC,
+
+          -- Active sale: sorted by end time
+          CASE 
+            WHEN NOW() BETWEEN ${SalesTable.startTime} AND ${SalesTable.endTime} THEN ${SalesTable.endTime} 
+          END ASC,
+
+          -- Upcoming sales: sorted by nearest start time
+          CASE 
+            WHEN ${SalesTable.startTime} > NOW() THEN ${SalesTable.startTime} 
+          END ASC,
+
+          -- Past sales: sorted by most recently ended
+          CASE 
+            WHEN ${SalesTable.endTime} < NOW() THEN ${SalesTable.endTime} 
+          END DESC
+        `)
       return jsonResponse({
         statusCode: StatusCodes.OK,
         data: sales,
@@ -41,7 +65,31 @@ export class SalesService {
       const { id, ...returnedColumns } = getTableColumns(SalesTable);
       const [sale] = await this.db.select(returnedColumns)
         .from(SalesTable) 
-        .orderBy(sql`(${SalesTable.startTime} >= NOW()) DESC, ${SalesTable.startTime} ASC`)
+        .orderBy(sql`
+          -- Tier 0: Active Sale right now
+          -- Tier 1: Next upcoming sales
+          -- Tier 2: Past sales
+          CASE 
+            WHEN NOW() BETWEEN ${SalesTable.startTime} AND ${SalesTable.endTime} THEN 0
+            WHEN ${SalesTable.startTime} > NOW() THEN 1
+            ELSE 2
+          END ASC,
+
+          -- Active sale: sorted by end time
+          CASE 
+            WHEN NOW() BETWEEN ${SalesTable.startTime} AND ${SalesTable.endTime} THEN ${SalesTable.endTime} 
+          END ASC,
+
+          -- Upcoming sales: sorted by nearest start time
+          CASE 
+            WHEN ${SalesTable.startTime} > NOW() THEN ${SalesTable.startTime} 
+          END ASC,
+
+          -- Past sales: sorted by most recently ended
+          CASE 
+            WHEN ${SalesTable.endTime} < NOW() THEN ${SalesTable.endTime} 
+          END DESC
+        `)
         .limit(1);
 
       if (sale == null) {
