@@ -3,37 +3,24 @@ import { jsonResponse } from "../utils/Response.js";
 import { StatusCodes } from "http-status-codes";
 import { DIContainer } from "../utils/DependencyInjection.js";
 import { SalesService } from "../services/SalesService.js";
-import { SalesTable } from "../../db/schema.js";
 
-export const checkLatestSaleStatus: RequestHandler = async (_req, res, next) => {
+export const checkLatestSaleStatus: RequestHandler = async (req, res, next) => {
   try {
     const salesService = DIContainer.get(SalesService);
-    const latestSaleResponse = await salesService.getLatestSale();
 
-    if (latestSaleResponse.statusCode !== StatusCodes.OK) {
-      return latestSaleResponse;
+    if (req.session.user?.id == null) {
+      const unauthorized = jsonResponse<null>({
+        statusCode: StatusCodes.UNAUTHORIZED,
+        message: "You are not authenticated. Please sign-in.",
+        data: null,
+      })
+      return res.status(unauthorized.statusCode).json(unauthorized.result);
     }
 
-    const latestSale = latestSaleResponse.result.data as Omit<typeof SalesTable.$inferSelect , "id"> ;
+    const latestSaleStatus = await salesService.getLatestSaleStatus(req.session.user.id);
 
-    const now = new Date().getTime();
-    const saleStartTime = new Date(latestSale.startTime).getTime();
-    const saleEndTime = new Date(latestSale.endTime).getTime();
-
-    if (now < saleStartTime) {
-      const response = jsonResponse<null>({
-        statusCode: StatusCodes.BAD_REQUEST,
-        message: "Sale has not started yet.",
-        data: null,
-      });
-      return res.status(response.statusCode).json(response.result);
-    } else if (now > saleEndTime) {
-      const response = jsonResponse<null>({
-        statusCode: StatusCodes.BAD_REQUEST,
-        message: "Sale has ended.",
-        data: null,
-      });
-      return res.status(response.statusCode).json(response.result);
+    if (latestSaleStatus.statusCode !== StatusCodes.CREATED) {
+      return res.status(latestSaleStatus.statusCode).json(latestSaleStatus.result);
     }
 
     return next();

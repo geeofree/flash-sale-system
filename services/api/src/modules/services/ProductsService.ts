@@ -86,7 +86,7 @@ export class ProductsService {
   async createOrder() {
     try {
       return jsonResponse<null>({
-        statusCode: StatusCodes.OK,
+        statusCode: StatusCodes.CREATED,
         message: "Product successfully reserved!",
         data: null,
       });

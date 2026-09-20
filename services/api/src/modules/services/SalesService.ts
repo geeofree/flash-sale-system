@@ -178,14 +178,14 @@ export class SalesService {
 
       const redisClient = await this.redis;
 
-      await redisClient.set(SalesService.STOCK_KEY, product.stock);
-
-      await redisClient.hSet(SalesService.WINDOW_KEY, {
-        startTime: latestSale.startTime.getTime(),
-        endTime: latestSale.endTime.getTime(),
-      });
-
-      await redisClient.del(SalesService.USERS_KEY);
+      await Promise.all([
+        redisClient.set(SalesService.STOCK_KEY, product.stock),
+        redisClient.hSet(SalesService.WINDOW_KEY, {
+          startTime: latestSale.startTime.getTime(),
+          endTime: latestSale.endTime.getTime(),
+        }),
+        redisClient.del(SalesService.USERS_KEY),
+      ]);
 
       return jsonResponse<null>({
         statusCode: StatusCodes.OK,
@@ -196,7 +196,103 @@ export class SalesService {
       console.log(error);
       return jsonResponse<null>({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: "Something went wrong while creating new sale.",
+        message: "Something went wrong while pre-loading a sale.",
+        data: null,
+      })
+    }
+  }
+
+  async getLatestSaleStatus(userId: number): Promise<JsonResponseMsg> {
+    try {
+      const redisClient = await this.redis;
+
+      const result = await redisClient.eval(`
+        local sale_window_key = KEYS[1]
+        local users_key = KEYS[2]
+        local stock_key = KEYS[3]
+
+        local sale_window = redis.call('HMGET', sale_window_key, ARGV[1], ARGV[2])
+        local start_time = tonumber(sale_window[1])
+        local end_time = tonumber(sale_window[2])
+
+        local stock = tonumber(redis.call('GET', stock_key))
+        local user_id = ARGV[3]
+
+        local now = tonumber(ARGV[4])
+
+        -- 1. Check Flash Sale Window
+        if not start_time or not end_time or now < start_time or now > end_time then
+            return "SALE_INACTIVE"
+        end
+
+        -- 2. Check Single-Item Per User Constraint
+        if redis.call('SISMEMBER', users_key, user_id) == 1 then
+            return "ALREADY_PURCHASED"
+        end
+
+        if not stock or stock <= 0 then
+            return "SOLD_OUT"
+        end
+
+        -- 4. Atomically Deduct Stock & Record User Purchase
+        redis.call('DECR', stock_key)
+        redis.call('SADD', users_key, user_id)
+
+        return "SUCCESS"
+      `, {
+        keys: [
+          SalesService.WINDOW_KEY,
+          SalesService.USERS_KEY,
+          SalesService.STOCK_KEY,
+        ],
+        arguments: [
+          "startTime",
+          "endTime",
+          userId.toString(),
+          new Date().getTime().toString()
+        ]
+      });
+
+      switch (result) {
+        case "SUCCESS":
+          return jsonResponse<string>({
+            statusCode: StatusCodes.CREATED,
+            message: "Order successfully reserved!",
+            data: result,
+          });
+
+        case "ALREADY_PURCHASED":
+          return jsonResponse<string>({
+            statusCode: StatusCodes.CONFLICT,
+            message: "You have already bought this item.",
+            data: result,
+          });
+
+        case "SALE_INACTIVE":
+          return jsonResponse<string>({
+            statusCode: StatusCodes.BAD_REQUEST,
+            message: "Sale has not yet started or has ended.",
+            data: result,
+          });
+
+        case "SOLD_OUT":
+          return jsonResponse<string>({
+            statusCode: StatusCodes.GONE,
+            message: "Item has been sold out.",
+            data: result,
+          });
+      }
+
+      return jsonResponse<null>({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: "Something went wrong while retrieving the sale status.",
+        data: null,
+      })
+    } catch (error: unknown) {
+      console.log(error);
+      return jsonResponse<null>({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: "Something went wrong while retrieving the sale status.",
         data: null,
       })
     }
