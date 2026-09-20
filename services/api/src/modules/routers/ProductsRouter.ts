@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { DIContainer } from "../utils/DependencyInjection.js";
 import { ProductsService } from "../services/ProductsService.js";
-import { checkLatestSaleStatus } from "../middlewares/SalesMiddleware.js";
+import { checkProductPurchaseForSale } from "../middlewares/SalesMiddleware.js";
 import { auth } from "../middlewares/AuthMiddleware.js";
 
 export const ProductsRouter = Router();
@@ -26,7 +26,7 @@ ProductsRouter.get('/:sku', async (req, res) => {
   res.status(response.statusCode).json(response.result);
 });
 
-ProductsRouter.post('/:sku/purchase', auth(), checkLatestSaleStatus, async (_req, res) => {
+ProductsRouter.post('/:sku/purchase', auth(), checkProductPurchaseForSale, async (_req, res) => {
   const productsService = DIContainer.get(ProductsService);
   const response = await productsService.createOrder();
   res.status(response.statusCode).json(response.result);

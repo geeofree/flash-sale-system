@@ -125,6 +125,56 @@ export class SalesService {
     }
   }
 
+  async getLatestSaleStatus() {
+    try {
+      const redisClient = await this.redis;
+
+      const [startTimeRes, endTimeRes] = await redisClient.hmGet(
+        SalesService.WINDOW_KEY,
+        ["startTime", "endTime"]
+      );
+
+      if (startTimeRes == null || endTimeRes == null) {
+        return jsonResponse<null>({
+          statusCode: StatusCodes.BAD_REQUEST,
+          message: "No latest sale is available.",
+          data: null,
+        })
+      }
+
+      const startTime = Number(startTimeRes);
+      const endTime = Number(endTimeRes);
+      const now = (new Date()).getTime();
+
+      if (now < startTime) {
+        return jsonResponse<null>({
+          statusCode: StatusCodes.BAD_REQUEST,
+          message: "Sale has not started yet.",
+          data: null,
+        })
+      } else if (now > endTime) {
+        return jsonResponse<null>({
+          statusCode: StatusCodes.BAD_REQUEST,
+          message: "Sale has ended.",
+          data: null,
+        })
+      }
+
+      return jsonResponse<null>({
+        statusCode: StatusCodes.OK,
+        message: "Sale is active!",
+        data: null,
+      })
+    } catch (error: unknown) {
+      console.log(error);
+      return jsonResponse<null>({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: "Something went wrong while getting the status of the latest sale.",
+        data: null,
+      })
+    }
+  }
+
   async createSale(params: typeof SalesTable.$inferInsert): Promise<JsonResponseMsg> {
     try {
       if (params.startTime == null || params.endTime == null) return jsonResponse({
@@ -184,6 +234,9 @@ export class SalesService {
           startTime: latestSale.startTime.getTime(),
           endTime: latestSale.endTime.getTime(),
         }),
+        // TODO: Instead of deleting the users sale cache,
+        // preload it with the entries of orders in the database.
+        // Do this when we have the order worker ready.
         redisClient.del(SalesService.USERS_KEY),
       ]);
 
@@ -202,7 +255,7 @@ export class SalesService {
     }
   }
 
-  async getLatestSaleStatus(userId: number): Promise<JsonResponseMsg> {
+  async checkProductPurchaseForSale(userId: number): Promise<JsonResponseMsg> {
     try {
       const redisClient = await this.redis;
 

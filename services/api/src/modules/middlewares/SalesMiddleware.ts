@@ -4,7 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import { DIContainer } from "../utils/DependencyInjection.js";
 import { SalesService } from "../services/SalesService.js";
 
-export const checkLatestSaleStatus: RequestHandler = async (req, res, next) => {
+export const checkProductPurchaseForSale: RequestHandler = async (req, res, next) => {
   try {
     const salesService = DIContainer.get(SalesService);
 
@@ -17,7 +17,7 @@ export const checkLatestSaleStatus: RequestHandler = async (req, res, next) => {
       return res.status(unauthorized.statusCode).json(unauthorized.result);
     }
 
-    const latestSaleStatus = await salesService.getLatestSaleStatus(req.session.user.id);
+    const latestSaleStatus = await salesService.checkProductPurchaseForSale(req.session.user.id);
 
     if (latestSaleStatus.statusCode !== StatusCodes.CREATED) {
       return res.status(latestSaleStatus.statusCode).json(latestSaleStatus.result);

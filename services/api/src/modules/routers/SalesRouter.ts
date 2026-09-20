@@ -7,14 +7,14 @@ export const SalesRouter = Router();
 
 SalesRouter.get('/', auth(["Admin"]), async (_req, res) => {
   const salesService = DIContainer.get(SalesService);
-  const saleStatus = await salesService.getAllSales();
-  res.status(saleStatus.statusCode).json(saleStatus.result);
+  const allSales = await salesService.getAllSales();
+  res.status(allSales.statusCode).json(allSales.result);
 });
 
-SalesRouter.get('/latest', async (_req, res) => {
+SalesRouter.get('/latest/status', async (_req, res) => {
   const salesService = DIContainer.get(SalesService);
-  const saleStatus = await salesService.getLatestSale();
-  res.status(saleStatus.statusCode).json(saleStatus.result);
+  const latestSale = await salesService.getLatestSaleStatus();
+  res.status(latestSale.statusCode).json(latestSale.result);
 });
 
 SalesRouter.post('/', auth(["Admin"]), async (req, res) => {
@@ -24,7 +24,7 @@ SalesRouter.post('/', auth(["Admin"]), async (req, res) => {
   res.status(response.statusCode).json(response.result);
 });
 
-SalesRouter.post('/pre-load/:productSku', auth(["Admin"]), async (req, res) => {
+SalesRouter.post('/preload/:productSku', auth(["Admin"]), async (req, res) => {
   const { productSku } = req.params;
   const salesService = DIContainer.get(SalesService);
   const response = await salesService.preloadSale(Number(productSku));
